@@ -53,10 +53,12 @@ Dados do aluno:
 - Altura: ${data.height_cm} cm
 - Experiência: ${data.experience_level}
 - Objetivos: ${goals.map((g) => goalLabel[g]).join(", ")}
+- Foco / pedidos especiais do aluno: ${focus || "nenhum pedido específico"}
 
 - Dias por semana: ${data.days_per_week}
 - Tempo por sessão: ${data.minutes_per_session} minutos
 - Limitações/lesões: ${data.limitations || "nenhuma"}
+
 
 Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
 {
