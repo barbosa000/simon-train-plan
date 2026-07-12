@@ -84,10 +84,9 @@ function ChatWindow({ threadId, initial, onFirstUserMessage }: { threadId: strin
     api: "/api/chat",
     prepareSendMessagesRequest: async ({ messages }) => {
       const { data } = await supabase.auth.getSession();
-      return {
-        body: { messages, threadId },
-        headers: data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {},
-      };
+      const headers: Record<string, string> = {};
+      if (data.session) headers.Authorization = `Bearer ${data.session.access_token}`;
+      return { body: { messages, threadId }, headers };
     },
   }), [threadId]);
 
