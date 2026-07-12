@@ -26,7 +26,7 @@ function Onboarding() {
     weight_kg: 75,
     height_cm: 175,
     experience_level: "iniciante" as "iniciante" | "intermediario" | "avancado",
-    goal: "hipertrofia" as (typeof goals)[number]["v"],
+    goals: ["hipertrofia"] as (typeof goals)[number]["v"][],
     days_per_week: 4,
     minutes_per_session: 60,
     limitations: "",
@@ -46,6 +46,7 @@ function Onboarding() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao gerar"),
   });
+
 
   const steps = [
     { title: "Sobre você", body: <StepAbout form={form} setForm={setForm} /> },
