@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getActivePlan } from "@/lib/workout.functions";
 import { logExercise } from "@/lib/progress.functions";
-import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight } from "lucide-react";
+import { resolveExerciseVideo } from "@/lib/media.functions";
+import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight, ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
