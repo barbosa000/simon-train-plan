@@ -12,9 +12,11 @@ const IntakeSchema = z.object({
   experience_level: z.enum(["iniciante", "intermediario", "avancado"]),
   limitations: z.string().max(500).optional().nullable(),
   goals: z.array(GoalEnum).min(1).max(5),
+  focus: z.string().max(500).optional().nullable(),
   days_per_week: z.number().int().min(1).max(7),
   minutes_per_session: z.number().int().min(15).max(180),
 });
+
 
 const goalLabel: Record<string, string> = {
   emagrecimento: "Emagrecimento", hipertrofia: "Hipertrofia",
