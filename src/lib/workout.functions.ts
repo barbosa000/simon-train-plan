@@ -30,10 +30,13 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    // Save intake
+    const { goals, ...rest } = data;
+    const goalCsv = goals.join(",");
+
+    // Save intake (goal column stores joined string; check constraint removed)
     const { data: intakeRow, error: intakeErr } = await supabase
       .from("intakes")
-      .insert({ ...data, user_id: userId })
+      .insert({ ...rest, goal: goalCsv, user_id: userId })
       .select()
       .single();
     if (intakeErr) throw new Error(intakeErr.message);
@@ -46,7 +49,8 @@ Dados do aluno:
 - Peso: ${data.weight_kg} kg
 - Altura: ${data.height_cm} cm
 - Experiência: ${data.experience_level}
-- Objetivo: ${goalLabel[data.goal]}
+- Objetivos: ${goals.map((g) => goalLabel[g]).join(", ")}
+
 - Dias por semana: ${data.days_per_week}
 - Tempo por sessão: ${data.minutes_per_session} minutos
 - Limitações/lesões: ${data.limitations || "nenhuma"}
