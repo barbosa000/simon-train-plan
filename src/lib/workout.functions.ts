@@ -153,3 +153,70 @@ export const getActivePlan = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     return { profile, plan };
   });
+
+export const refinePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ request: z.string().min(3).max(600) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    const { data: current, error: curErr } = await supabase
+      .from("workout_plans")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+    if (!current) throw new Error("Nenhuma planilha ativa para ajustar");
+
+    const prompt = `Você é um preparador físico. O aluno já tem esta planilha ativa (JSON):
+
+${JSON.stringify(current.plan)}
+
+O aluno pediu o seguinte ajuste/adição:
+"${data.request}"
+
+Atualize a planilha respeitando o pedido. Mantenha a MESMA estrutura JSON exata (title, summary, split, days[], nutrition_tips, safety_notes) com os mesmos campos por exercício (name, sets, reps, rest_seconds, tempo, cues, video_query, image_query). Ajuste apenas o necessário e retorne APENAS o JSON completo atualizado, sem markdown.`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`AI Gateway ${res.status}: ${text}`);
+    }
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) throw new Error("Resposta vazia da IA");
+    let plan: any;
+    try { plan = JSON.parse(content); } catch { throw new Error("Resposta inválida da IA"); }
+
+    await supabase.from("workout_plans").update({ is_active: false }).eq("user_id", userId);
+    const { data: planRow, error: planErr } = await supabase
+      .from("workout_plans")
+      .insert({
+        user_id: userId,
+        intake_id: current.intake_id,
+        title: plan.title ?? current.title,
+        summary: plan.summary ?? current.summary,
+        plan,
+        is_active: true,
+      })
+      .select()
+      .single();
+    if (planErr) throw new Error(planErr.message);
+    return { id: planRow.id };
+  });
+
