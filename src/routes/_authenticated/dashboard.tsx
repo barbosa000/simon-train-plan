@@ -43,7 +43,7 @@ function Dashboard() {
     );
   }
 
-  const plan = data.plan.plan as { days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string };
+  const plan = data.plan.plan as unknown as { days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string };
   const [selectedIdx, setSelectedIdx] = useState(0);
   const day = plan.days?.[selectedIdx];
 
