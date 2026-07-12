@@ -52,29 +52,42 @@ function Dashboard() {
 
   return (
     <div className="animate-fade-up">
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Sua planilha ativa</div>
-          <h1 className="mt-1 font-display text-4xl">{data.plan.title}</h1>
-          {plan.summary && <p className="mt-2 max-w-2xl text-muted-foreground">{plan.summary}</p>}
+      <div className="mb-8 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-2.5 py-1 text-[10px] uppercase tracking-widest text-gold">
+            <Flame className="h-3 w-3" /> Planilha ativa
+          </div>
+          <h1 className="mt-2 truncate font-display text-2xl sm:text-4xl">{data.plan.title}</h1>
+          {plan.summary && <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">{plan.summary}</p>}
+          {plan.split && (
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+              <Target className="h-3 w-3" /> Divisão: {plan.split}
+            </div>
+          )}
         </div>
-        <Link to="/onboarding" className="rounded-full border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground">
-          Gerar nova planilha
+        <Link to="/onboarding" className="shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground sm:px-4 sm:py-2 sm:text-xs">
+          Nova planilha
         </Link>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {plan.days?.map((d, i) => (
-          <button key={i} onClick={() => setSelectedIdx(i)}
-            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-              i === selectedIdx ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}>
-            {d.day}
-          </button>
-        ))}
+      <div className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex gap-2 sm:flex-wrap">
+          {plan.days?.map((d, i) => (
+            <button key={i} onClick={() => setSelectedIdx(i)}
+              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-all ${
+                i === selectedIdx
+                  ? "bg-primary text-primary-foreground shadow-soft"
+                  : "border border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              }`}>
+              {d.day}
+            </button>
+          ))}
+        </div>
       </div>
 
       {day && <DayView day={day} planId={data.plan.id} />}
+
+      <RefinePanel />
 
       {plan.safety_notes && (
         <div className="mt-10 rounded-xl border border-gold/40 bg-gold/5 p-5 text-sm">
@@ -93,6 +106,75 @@ function Dashboard() {
     </div>
   );
 }
+
+function RefinePanel() {
+  const refine = useServerFn(refinePlan);
+  const qc = useQueryClient();
+  const [request, setRequest] = useState("");
+  const [focused, setFocused] = useState(false);
+  const mut = useMutation({
+    mutationFn: () => refine({ data: { request } }),
+    onSuccess: () => {
+      toast.success("Planilha atualizada!");
+      setRequest("");
+      qc.invalidateQueries({ queryKey: ["active-plan"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao ajustar"),
+  });
+
+  const suggestions = [
+    "Adicione um dia focado em glúteos",
+    "Trocar supino por flexão",
+    "Mais exercícios de core",
+    "Reduzir tempo de descanso",
+  ];
+
+  return (
+    <div className="mt-10 overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 via-card to-card p-5 sm:p-6 shadow-soft">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-gold-foreground">
+          <Wand2 className="h-4 w-4" />
+        </div>
+        <div>
+          <div className="text-sm font-medium">Peça um ajuste à IA</div>
+          <div className="text-xs text-muted-foreground">Adicione exercícios, mude o foco, altere volume — a planilha é atualizada.</div>
+        </div>
+      </div>
+      <div className={`flex flex-col gap-2 rounded-xl border bg-background p-2 transition-all sm:flex-row sm:items-end ${focused ? "border-gold ring-2 ring-gold/20" : "border-border"}`}>
+        <textarea
+          value={request}
+          onChange={(e) => setRequest(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          rows={2}
+          placeholder="Ex: quero um dia extra de cardio ou trocar agachamento por leg press..."
+          className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+        />
+        <button
+          onClick={() => mut.mutate()}
+          disabled={mut.isPending || request.trim().length < 3}
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition-opacity disabled:opacity-50"
+        >
+          {mut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {mut.isPending ? "Ajustando..." : "Enviar"}
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            onClick={() => setRequest((r) => (r ? `${r}. ${s}` : s))}
+            className="rounded-full border border-border bg-background/50 px-3 py-1 text-[11px] text-muted-foreground transition-colors hover:border-gold hover:text-foreground"
+          >
+            + {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 
 function DayView({ day, planId }: { day: Day; planId: string }) {
   return (
