@@ -54,10 +54,12 @@ function Onboarding() {
   const steps = [
     { title: "Sobre você", body: <StepAbout form={form} setForm={setForm} /> },
     { title: "Sua experiência", body: <StepExperience form={form} setForm={setForm} /> },
-    { title: "Seu objetivo", body: <StepGoal form={form} setForm={setForm} /> },
+    { title: "Seus objetivos", body: <StepGoal form={form} setForm={setForm} /> },
     { title: "Sua rotina", body: <StepRoutine form={form} setForm={setForm} /> },
     { title: "Limitações", body: <StepLimits form={form} setForm={setForm} /> },
+    { title: "Foco personalizado", body: <StepFocus form={form} setForm={setForm} /> },
   ];
+
   const current = steps[step];
   const isLast = step === steps.length - 1;
 
