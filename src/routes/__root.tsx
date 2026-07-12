@@ -53,9 +53,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "SimonMuscle — Treinos personalizados por IA" },
       { name: "description", content: "Planilhas de musculação personalizadas, acompanhamento de evolução e coach IA. Do cadastro ao próximo PR." },
       { property: "og:title", content: "SimonMuscle — Treinos personalizados por IA" },
-      { property: "og:description", content: "Planilhas de musculação personalizadas, acompanhamento de evolução e coach IA." },
+      { property: "og:description", content: "Planilhas de musculação personalizadas, acompanhamento de evolução e coach IA. Do cadastro ao próximo PR." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "SimonMuscle — Treinos personalizados por IA" },
+      { name: "twitter:description", content: "Planilhas de musculação personalizadas, acompanhamento de evolução e coach IA. Do cadastro ao próximo PR." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
