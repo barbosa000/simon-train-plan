@@ -22,6 +22,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const getPlan = useServerFn(getActivePlan);
   const { data, isLoading } = useQuery({ queryKey: ["active-plan"], queryFn: () => getPlan() });
+  const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (isLoading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -44,7 +45,6 @@ function Dashboard() {
   }
 
   const plan = data.plan.plan as unknown as { days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string };
-  const [selectedIdx, setSelectedIdx] = useState(0);
   const day = plan.days?.[selectedIdx];
 
   return (
