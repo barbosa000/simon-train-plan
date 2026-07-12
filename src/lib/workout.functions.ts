@@ -32,7 +32,7 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    const { goals, ...rest } = data;
+    const { goals, focus, ...rest } = data;
     const goalCsv = goals.join(",");
 
     // Save intake (goal column stores joined string; check constraint removed)
@@ -44,6 +44,7 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
     if (intakeErr) throw new Error(intakeErr.message);
 
     const prompt = `Você é um preparador físico especialista em musculação. Crie uma planilha semanal detalhada em JSON para o seguinte aluno.
+
 
 Dados do aluno:
 - Sexo: ${data.sex}
