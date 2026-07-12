@@ -30,6 +30,7 @@ function Onboarding() {
     days_per_week: 4,
     minutes_per_session: 60,
     limitations: "",
+    focus: "",
   });
 
   const mutation = useMutation({
@@ -37,9 +38,11 @@ function Onboarding() {
       data: {
         ...form,
         limitations: form.limitations || null,
+        focus: form.focus || null,
         age: form.age || null,
       },
     }),
+
     onSuccess: () => {
       toast.success("Sua planilha está pronta!");
       navigate({ to: "/dashboard" });
