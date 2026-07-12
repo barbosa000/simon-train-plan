@@ -202,3 +202,46 @@ function StepLimits({ form, setForm }: { form: any; setForm: (f: any) => void })
     </Field>
   );
 }
+
+function StepFocus({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+  const suggestions = [
+    "Quero foco extra em glúteos",
+    "Prefiro exercícios com peso livre",
+    "Incluir mais mobilidade",
+    "Muito cardio HIIT",
+    "Foco em braços e ombros",
+    "Só exercícios em casa",
+  ];
+  return (
+    <div className="space-y-4">
+      <Field label="Conte pra IA: qual é o seu foco principal ou algo extra que quer na planilha?">
+        <textarea
+          rows={5}
+          placeholder="Ex: quero enfatizar glúteos e posterior, adicionar dia de core, evitar exercícios com barra..."
+          value={form.focus}
+          onChange={(e) => setForm({ ...form, focus: e.target.value })}
+          className={inputCls}
+        />
+      </Field>
+      <div>
+        <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Sugestões rápidas</div>
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                const cur = form.focus?.trim();
+                setForm({ ...form, focus: cur ? `${cur}. ${s}` : s });
+              }}
+              className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-gold hover:text-foreground"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
