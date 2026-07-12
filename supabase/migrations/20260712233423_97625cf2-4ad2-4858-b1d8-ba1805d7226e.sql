@@ -1,0 +1,1 @@
+ALTER TABLE public.intakes DROP CONSTRAINT IF EXISTS intakes_goal_check;

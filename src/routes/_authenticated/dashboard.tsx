@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getActivePlan } from "@/lib/workout.functions";
 import { logExercise } from "@/lib/progress.functions";
-import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight } from "lucide-react";
+import { resolveExerciseVideo } from "@/lib/media.functions";
+import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight, ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -114,9 +116,24 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
 function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; planId: string }) {
   const [open, setOpen] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const videoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.video_query ?? ex.name + " execução")}`;
-  const imageUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(ex.image_query ?? ex.name)}`;
-  const embed = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(ex.video_query ?? ex.name + " execução")}`;
+  const [showPlayer, setShowPlayer] = useState(false);
+  const resolve = useServerFn(resolveExerciseVideo);
+  const query = ex.video_query ?? `${ex.name} execução musculação`;
+  const imgQuery = ex.image_query ?? ex.name;
+
+  const { data: media, isLoading: mediaLoading } = useQuery({
+    queryKey: ["exercise-media", query],
+    queryFn: () => resolve({ data: { query } }),
+    enabled: open,
+    staleTime: 1000 * 60 * 60 * 6,
+  });
+
+  const videoId = media?.videoId ?? null;
+  const videoUrl = videoId
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
+  const imagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}`;
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -134,14 +151,52 @@ function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; pl
       {open && (
         <div className="border-t border-border p-5 pt-4 animate-fade-up">
           {ex.cues && <p className="mb-4 text-sm text-muted-foreground">{ex.cues}</p>}
-          <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-black">
-            <iframe src={embed} allow="encrypted-media" className="h-full w-full" title={ex.name} />
+          <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-black relative">
+            {mediaLoading && (
+              <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!mediaLoading && videoId && showPlayer && (
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+                title={ex.name}
+              />
+            )}
+            {!mediaLoading && videoId && !showPlayer && thumbnailUrl && (
+              <button
+                onClick={() => setShowPlayer(true)}
+                className="group relative block h-full w-full"
+                aria-label={`Reproduzir vídeo de ${ex.name}`}
+              >
+                <img src={thumbnailUrl} alt={ex.name} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/50">
+                  <PlayCircle className="h-16 w-16 text-white drop-shadow-lg" />
+                </div>
+              </button>
+            )}
+            {!mediaLoading && !videoId && (
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <PlayCircle className="h-10 w-10" />
+                Vídeo indisponível — buscar no YouTube
+              </a>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <a href={videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent">
-              <PlayCircle className="h-3.5 w-3.5" /> Ver vídeos
+              <PlayCircle className="h-3.5 w-3.5" /> Ver no YouTube
             </a>
-            <a href={imageUrl} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent">Ver imagens</a>
+            <a href={imagesUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent">
+              <ImageIcon className="h-3.5 w-3.5" /> Ver imagens
+            </a>
             <button onClick={() => setShowLog(!showLog)} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground">
               <Plus className="h-3.5 w-3.5" /> Registrar carga
             </button>
@@ -152,6 +207,7 @@ function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; pl
     </div>
   );
 }
+
 
 function QuickLog({ dayKey, planId, exerciseName, onDone }: { dayKey: string; planId: string; exerciseName: string; onDone: () => void }) {
   const log = useServerFn(logExercise);

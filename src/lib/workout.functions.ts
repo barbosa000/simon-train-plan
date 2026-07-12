@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+const GoalEnum = z.enum(["emagrecimento", "hipertrofia", "forca", "condicionamento", "saude_geral"]);
+
 const IntakeSchema = z.object({
   weight_kg: z.number().min(30).max(300),
   height_cm: z.number().min(120).max(230),
@@ -9,7 +11,7 @@ const IntakeSchema = z.object({
   age: z.number().int().min(12).max(90).optional().nullable(),
   experience_level: z.enum(["iniciante", "intermediario", "avancado"]),
   limitations: z.string().max(500).optional().nullable(),
-  goal: z.enum(["emagrecimento", "hipertrofia", "forca", "condicionamento", "saude_geral"]),
+  goals: z.array(GoalEnum).min(1).max(5),
   days_per_week: z.number().int().min(1).max(7),
   minutes_per_session: z.number().int().min(15).max(180),
 });
@@ -19,6 +21,7 @@ const goalLabel: Record<string, string> = {
   forca: "Força", condicionamento: "Condicionamento", saude_geral: "Saúde geral",
 };
 
+
 export const generateWorkoutPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => IntakeSchema.parse(input))
@@ -27,10 +30,13 @@ export const generateWorkoutPlan = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
-    // Save intake
+    const { goals, ...rest } = data;
+    const goalCsv = goals.join(",");
+
+    // Save intake (goal column stores joined string; check constraint removed)
     const { data: intakeRow, error: intakeErr } = await supabase
       .from("intakes")
-      .insert({ ...data, user_id: userId })
+      .insert({ ...rest, goal: goalCsv, user_id: userId })
       .select()
       .single();
     if (intakeErr) throw new Error(intakeErr.message);
@@ -43,7 +49,8 @@ Dados do aluno:
 - Peso: ${data.weight_kg} kg
 - Altura: ${data.height_cm} cm
 - Experiência: ${data.experience_level}
-- Objetivo: ${goalLabel[data.goal]}
+- Objetivos: ${goals.map((g) => goalLabel[g]).join(", ")}
+
 - Dias por semana: ${data.days_per_week}
 - Tempo por sessão: ${data.minutes_per_session} minutos
 - Limitações/lesões: ${data.limitations || "nenhuma"}

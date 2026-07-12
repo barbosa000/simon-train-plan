@@ -26,7 +26,7 @@ function Onboarding() {
     weight_kg: 75,
     height_cm: 175,
     experience_level: "iniciante" as "iniciante" | "intermediario" | "avancado",
-    goal: "hipertrofia" as (typeof goals)[number]["v"],
+    goals: ["hipertrofia"] as (typeof goals)[number]["v"][],
     days_per_week: 4,
     minutes_per_session: 60,
     limitations: "",
@@ -46,6 +46,7 @@ function Onboarding() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao gerar"),
   });
+
 
   const steps = [
     { title: "Sobre você", body: <StepAbout form={form} setForm={setForm} /> },
@@ -149,18 +150,31 @@ function StepExperience({ form, setForm }: { form: any; setForm: (f: any) => voi
 }
 
 function StepGoal({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+  const toggle = (v: string) => {
+    const current: string[] = form.goals ?? [];
+    const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
+    setForm({ ...form, goals: next.length ? next : [v] });
+  };
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {goals.map((g) => (
-        <button key={g.v} onClick={() => setForm({ ...form, goal: g.v })}
-          className={`rounded-xl border p-4 text-left transition-all ${form.goal === g.v ? "border-gold bg-gold/5" : "border-border hover:border-foreground/30"}`}>
-          <div className="font-medium">{g.label}</div>
-          <div className="text-sm text-muted-foreground">{g.desc}</div>
-        </button>
-      ))}
+    <div>
+      <p className="mb-4 text-sm text-muted-foreground">Selecione um ou mais objetivos. A IA vai combinar todos na sua planilha.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {goals.map((g) => {
+          const active = (form.goals ?? []).includes(g.v);
+          return (
+            <button key={g.v} type="button" onClick={() => toggle(g.v)}
+              className={`relative rounded-xl border p-4 text-left transition-all ${active ? "border-gold bg-gold/5" : "border-border hover:border-foreground/30"}`}>
+              <div className="font-medium">{g.label}</div>
+              <div className="text-sm text-muted-foreground">{g.desc}</div>
+              {active && <div className="absolute right-3 top-3 h-5 w-5 rounded-full bg-gold text-center text-xs leading-5 text-gold-foreground">✓</div>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
 
 function StepRoutine({ form, setForm }: { form: any; setForm: (f: any) => void }) {
   return (
