@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const GoalEnum = z.enum(["emagrecimento", "hipertrofia", "forca", "condicionamento", "saude_geral"]);
+const GoalEnum = z.enum(["emagrecimento", "hipertrofia", "forca", "condicionamento", "saude_geral", "atleta"]);
 
 const IntakeSchema = z.object({
   weight_kg: z.number().min(30).max(300),
@@ -20,7 +20,7 @@ const IntakeSchema = z.object({
 
 const goalLabel: Record<string, string> = {
   emagrecimento: "Emagrecimento", hipertrofia: "Hipertrofia",
-  forca: "Força", condicionamento: "Condicionamento", saude_geral: "Saúde geral",
+  forca: "Força", condicionamento: "Condicionamento", saude_geral: "Saúde geral", atleta: "Atleta de Esporte de Combate (Jiu Jitsu, Judô)",
 };
 
 
@@ -66,11 +66,20 @@ Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
   "summary": "1-2 frases descrevendo a divisão e a estratégia",
   "split": "Ex: ABC, Push/Pull/Legs, Full-body",
   "weeks_recommended": 6,
+  "stretching_routine": [
+    {
+      "name": "Nome do alongamento/mobilidade",
+      "duration": "60s ou 10 reps",
+      "cues": "Instrução de como realizar",
+      "video_query": "nome do alongamento execução",
+      "image_query": "nome do alongamento"
+    }
+  ],
   "days": [
     {
       "day": "Dia 1 — Peito e Tríceps",
       "focus": "Peito, tríceps",
-      "warmup": "5 min esteira leve + mobilidade de ombros",
+      "warmup": "5 min esteira leve + mobilidade",
       "exercises": [
         {
           "name": "Supino reto com barra",
@@ -83,7 +92,7 @@ Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
           "image_query": "supino reto com barra"
         }
       ],
-      "cooldown": "5 min alongamento de peito e tríceps"
+      "cooldown": "5 min alongamento"
     }
   ],
   "nutrition_tips": ["dica 1", "dica 2", "dica 3"],
@@ -91,11 +100,11 @@ Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
 }
 
 Regras:
-- Respeite o objetivo (hipertrofia = 8-12 reps, força = 3-6 reps, emagrecimento = circuitos + cardio, etc.)
-- Considere as limitações e evite exercícios contraindicados
-- Inclua entre 5 e 8 exercícios por dia, ajustando ao tempo disponível
-- video_query e image_query em português para busca no YouTube/imagens
-- Nomes de exercícios em português`;
+- Se o objetivo incluir Atleta, foque fortemente em condicionamento esportivo, mobilidade, core e explosão.
+- Sempre inclua de 3 a 5 alongamentos/mobilidades essenciais em "stretching_routine", focados nas necessidades do aluno.
+- Respeite as limitações do aluno.
+- Inclua entre 5 e 8 exercícios de musculação por dia em "days".
+- video_query e image_query em português.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -182,7 +191,7 @@ ${JSON.stringify(current.plan)}
 O aluno pediu o seguinte ajuste/adição:
 "${data.request}"
 
-Atualize a planilha respeitando o pedido. Mantenha a MESMA estrutura JSON exata (title, summary, split, days[], nutrition_tips, safety_notes) com os mesmos campos por exercício (name, sets, reps, rest_seconds, tempo, cues, video_query, image_query). Ajuste apenas o necessário e retorne APENAS o JSON completo atualizado, sem markdown.`;
+Atualize a planilha respeitando o pedido. Mantenha a MESMA estrutura JSON exata (title, summary, split, stretching_routine, days[], nutrition_tips, safety_notes) com os mesmos campos. Ajuste apenas o necessário e retorne APENAS o JSON completo atualizado, sem markdown.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

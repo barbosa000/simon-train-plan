@@ -17,6 +17,9 @@ interface Exercise {
   name: string; sets: number; reps: string; rest_seconds?: number;
   tempo?: string; cues?: string; video_query?: string; image_query?: string;
 }
+interface StretchingExercise {
+  name: string; duration: string; cues?: string; video_query?: string; image_query?: string;
+}
 interface Day {
   day: string; focus?: string; warmup?: string; cooldown?: string; exercises: Exercise[];
 }
@@ -47,8 +50,12 @@ function Dashboard() {
     );
   }
 
-  const plan = data.plan.plan as unknown as { days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string };
-  const day = plan.days?.[selectedIdx];
+  const plan = data.plan.plan as unknown as { 
+    days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string;
+    stretching_routine?: StretchingExercise[];
+  };
+  const isStretching = selectedIdx === -1;
+  const day = !isStretching ? plan.days?.[selectedIdx] : null;
 
   return (
     <div className="animate-fade-up">
@@ -82,10 +89,21 @@ function Dashboard() {
               {d.day}
             </button>
           ))}
+          {plan.stretching_routine && plan.stretching_routine.length > 0 && (
+            <button onClick={() => setSelectedIdx(-1)}
+              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-all ${
+                isStretching
+                  ? "bg-gold text-gold-foreground shadow-gold"
+                  : "border border-gold/40 bg-gold/5 text-gold hover:border-gold hover:bg-gold/10"
+              }`}>
+              Mobilidade e Alongamento
+            </button>
+          )}
         </div>
       </div>
 
       {day && <DayView day={day} planId={data.plan.id} />}
+      {isStretching && plan.stretching_routine && <StretchingView routine={plan.stretching_routine} />}
 
       <RefinePanel />
 
@@ -192,6 +210,85 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Volta à calma</div>
           <div className="mt-1 text-sm">{day.cooldown}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StretchingView({ routine }: { routine: StretchingExercise[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-gold/40 bg-gold/5 p-4 text-sm text-muted-foreground">
+        <strong className="text-gold">Sua rotina de mobilidade.</strong> Recomendamos realizar antes ou após os treinos, ou em um dia de descanso para otimizar sua recuperação.
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {routine.map((ex, i) => (
+          <StretchingCard key={i} ex={ex} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StretchingCard({ ex }: { ex: StretchingExercise }) {
+  const [open, setOpen] = useState(false);
+  const resolve = useServerFn(resolveExerciseVideo);
+  const query = ex.video_query ?? `${ex.name} alongamento mobilidade`;
+
+  const { data: media, isLoading: mediaLoading } = useQuery({
+    queryKey: ["exercise-media", query],
+    queryFn: () => resolve({ data: { query } }),
+    enabled: open,
+    staleTime: 1000 * 60 * 60 * 6,
+  });
+
+  const videoId = media?.videoId ?? null;
+  const videoUrl = videoId
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl border border-gold/40 bg-card shadow-soft transition-all hover:border-gold/80">
+      <div className="flex flex-col p-4 sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-2">
+          <h3 className="font-display text-lg leading-tight text-gold">{ex.name}</h3>
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold hover:bg-gold hover:text-gold-foreground transition-colors"
+          >
+            <PlayCircle className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-gold/10 px-2 py-1 text-xs font-medium text-gold w-fit">
+          <Timer className="h-3.5 w-3.5" /> {ex.duration}
+        </div>
+        {ex.cues && <p className="text-xs text-muted-foreground">{ex.cues}</p>}
+      </div>
+
+      {open && (
+        <div className="border-t border-gold/20 bg-background/30 p-4 pt-4 animate-fade-up">
+          <div className="aspect-video overflow-hidden rounded-lg bg-black relative shadow-inner">
+            {mediaLoading && (
+              <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-gold" />
+              </div>
+            )}
+            {!mediaLoading && videoId && (
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+                title={ex.name}
+              />
+            )}
+            {!mediaLoading && !videoId && (
+              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-gold hover:text-gold/80">
+                <PlayCircle className="h-10 w-10" /> Ver no YouTube
+              </a>
+            )}
+          </div>
         </div>
       )}
     </div>

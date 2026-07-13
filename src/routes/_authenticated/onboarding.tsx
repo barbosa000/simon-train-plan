@@ -14,6 +14,7 @@ const goals = [
   { v: "forca", label: "Força", desc: "Máximo desempenho" },
   { v: "condicionamento", label: "Condicionamento", desc: "Resistência e fôlego" },
   { v: "saude_geral", label: "Saúde geral", desc: "Bem-estar e disposição" },
+  { v: "atleta", label: "Atleta (Jiu Jitsu, Judô, etc)", desc: "Preparação física específica" },
 ] as const;
 
 function Onboarding() {
@@ -211,6 +212,8 @@ function StepFocus({ form, setForm }: { form: any; setForm: (f: any) => void }) 
     "Muito cardio HIIT",
     "Foco em braços e ombros",
     "Só exercícios em casa",
+    "Preparação para Jiu Jitsu",
+    "Preparação para Judô",
   ];
   return (
     <div className="space-y-4">
