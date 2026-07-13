@@ -54,6 +54,7 @@ function Dashboard() {
 
   const plan = data.plan.plan as unknown as { 
     days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string;
+    stretching_routine?: MobilityExercise[];
   };
   const day = plan.days?.[selectedIdx];
 
@@ -92,7 +93,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {day && <DayView day={day} planId={data.plan.id} />}
+      {day && <DayView day={day} planId={data.plan.id} globalStretching={plan.stretching_routine} />}
 
       <RefinePanel />
 
@@ -183,7 +184,11 @@ function RefinePanel() {
 
 
 
-function DayView({ day, planId }: { day: Day; planId: string }) {
+function DayView({ day, planId, globalStretching }: { day: Day; planId: string; globalStretching?: MobilityExercise[] }) {
+  const mobility = (day.warmup_mobility && day.warmup_mobility.length > 0) 
+    ? day.warmup_mobility 
+    : globalStretching;
+
   return (
     <div className="space-y-6">
       {day.warmup && (
@@ -193,7 +198,7 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
         </div>
       )}
 
-      {day.warmup_mobility && day.warmup_mobility.length > 0 && (
+      {mobility && mobility.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/10 text-gold">
@@ -205,7 +210,7 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {day.warmup_mobility.map((ex, i) => (
+            {mobility.map((ex, i) => (
               <MobilityCard key={i} ex={ex} />
             ))}
           </div>
