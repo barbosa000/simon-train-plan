@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getActivePlan, refinePlan } from "@/lib/workout.functions";
 import { logExercise } from "@/lib/progress.functions";
 import { resolveExerciseVideo } from "@/lib/media.functions";
-import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight, ImageIcon, Wand2, Flame, Target, Send } from "lucide-react";
+import { Sparkles, PlayCircle, Timer, Repeat, Loader2, Plus, ChevronRight, ImageIcon, Wand2, Flame, Target, Send, StretchHorizontal } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,11 +17,13 @@ interface Exercise {
   name: string; sets: number; reps: string; rest_seconds?: number;
   tempo?: string; cues?: string; video_query?: string; image_query?: string;
 }
-interface StretchingExercise {
+interface MobilityExercise {
   name: string; duration: string; cues?: string; video_query?: string; image_query?: string;
 }
 interface Day {
-  day: string; focus?: string; warmup?: string; cooldown?: string; exercises: Exercise[];
+  day: string; focus?: string; warmup?: string; cooldown?: string;
+  exercises: Exercise[];
+  warmup_mobility?: MobilityExercise[];
 }
 
 function Dashboard() {
@@ -52,10 +54,8 @@ function Dashboard() {
 
   const plan = data.plan.plan as unknown as { 
     days: Day[]; summary?: string; split?: string; nutrition_tips?: string[]; safety_notes?: string;
-    stretching_routine?: StretchingExercise[];
   };
-  const isStretching = selectedIdx === -1;
-  const day = !isStretching ? plan.days?.[selectedIdx] : null;
+  const day = plan.days?.[selectedIdx];
 
   return (
     <div className="animate-fade-up">
@@ -89,21 +89,10 @@ function Dashboard() {
               {d.day}
             </button>
           ))}
-          {plan.stretching_routine && plan.stretching_routine.length > 0 && (
-            <button onClick={() => setSelectedIdx(-1)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-all ${
-                isStretching
-                  ? "bg-gold text-gold-foreground shadow-gold"
-                  : "border border-gold/40 bg-gold/5 text-gold hover:border-gold hover:bg-gold/10"
-              }`}>
-              Mobilidade e Alongamento
-            </button>
-          )}
         </div>
       </div>
 
       {day && <DayView day={day} planId={data.plan.id} />}
-      {isStretching && plan.stretching_routine && <StretchingView routine={plan.stretching_routine} />}
 
       <RefinePanel />
 
@@ -203,6 +192,26 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
           <div className="mt-1 text-sm">{day.warmup}</div>
         </div>
       )}
+
+      {day.warmup_mobility && day.warmup_mobility.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold/10 text-gold">
+              <StretchHorizontal className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gold">Mobilidade e Alongamento</h3>
+              <p className="text-xs text-muted-foreground">Exercícios específicos para o treino de hoje</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {day.warmup_mobility.map((ex, i) => (
+              <MobilityCard key={i} ex={ex} />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {day.exercises?.map((ex, i) => <ExerciseCard key={i} ex={ex} dayKey={day.day} planId={planId} />)}
       </div>
@@ -216,22 +225,7 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
   );
 }
 
-function StretchingView({ routine }: { routine: StretchingExercise[] }) {
-  return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-gold/40 bg-gold/5 p-4 text-sm text-muted-foreground">
-        <strong className="text-gold">Sua rotina de mobilidade.</strong> Recomendamos realizar antes ou após os treinos, ou em um dia de descanso para otimizar sua recuperação.
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {routine.map((ex, i) => (
-          <StretchingCard key={i} ex={ex} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StretchingCard({ ex }: { ex: StretchingExercise }) {
+function MobilityCard({ ex }: { ex: MobilityExercise }) {
   const [open, setOpen] = useState(false);
   const resolve = useServerFn(resolveExerciseVideo);
   const query = ex.video_query ?? `${ex.name} alongamento mobilidade`;

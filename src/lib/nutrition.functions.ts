@@ -1,17 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 export const getNutritionLogs = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { data: { session }, error: authErr } = await supabase.auth.getSession();
-    if (authErr || !session) throw new Error("Unauthorized");
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
 
     const { data, error } = await supabase
       .from("nutrition_logs")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .order("date", { ascending: false });
 
     if (error) throw new Error(error.message);
@@ -19,13 +18,21 @@ export const getNutritionLogs = createServerFn({ method: "GET" })
   });
 
 export const logNutrition = createServerFn({ method: "POST" })
-  .validator((d: { calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; notes?: string }) => d)
-  .handler(async ({ data }) => {
-    const { data: { session }, error: authErr } = await supabase.auth.getSession();
-    if (authErr || !session) throw new Error("Unauthorized");
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      calories: z.number().nullable().optional(),
+      protein: z.number().nullable().optional(),
+      carbs: z.number().nullable().optional(),
+      fat: z.number().nullable().optional(),
+      notes: z.string().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
 
     const { error } = await supabase.from("nutrition_logs").insert({
-      user_id: session.user.id,
+      user_id: userId,
       calories: data.calories,
       protein: data.protein,
       carbs: data.carbs,
@@ -78,7 +85,6 @@ Dados:
 - Sexo: ${intake.sex}
 - Idade: ${intake.age || "não informada"}
 - Objetivos: ${intake.goal}
-- Foco: ${intake.focus || "nenhum"}
 
 Retorne APENAS um objeto JSON válido, sem markdown:
 {

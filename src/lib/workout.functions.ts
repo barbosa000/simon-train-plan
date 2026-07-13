@@ -66,20 +66,20 @@ Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
   "summary": "1-2 frases descrevendo a divisão e a estratégia",
   "split": "Ex: ABC, Push/Pull/Legs, Full-body",
   "weeks_recommended": 6,
-  "stretching_routine": [
-    {
-      "name": "Nome do alongamento/mobilidade",
-      "duration": "60s ou 10 reps",
-      "cues": "Instrução de como realizar",
-      "video_query": "nome do alongamento execução",
-      "image_query": "nome do alongamento"
-    }
-  ],
   "days": [
     {
       "day": "Dia 1 — Peito e Tríceps",
       "focus": "Peito, tríceps",
-      "warmup": "5 min esteira leve + mobilidade",
+      "warmup": "5 min esteira leve",
+      "warmup_mobility": [
+        {
+          "name": "Nome do alongamento/mobilidade ESPECÍFICO para os músculos deste dia",
+          "duration": "60s ou 10 reps",
+          "cues": "Instrução de como realizar",
+          "video_query": "nome do alongamento execução",
+          "image_query": "nome do alongamento"
+        }
+      ],
       "exercises": [
         {
           "name": "Supino reto com barra",
@@ -101,9 +101,10 @@ Retorne APENAS um objeto JSON válido, sem markdown, com esta estrutura exata:
 
 Regras:
 - Se o objetivo incluir Atleta, foque fortemente em condicionamento esportivo, mobilidade, core e explosão.
-- Sempre inclua de 3 a 5 alongamentos/mobilidades essenciais em "stretching_routine", focados nas necessidades do aluno.
+- IMPORTANTE: Cada dia DEVE ter seu próprio array "warmup_mobility" com 3 a 5 exercícios de mobilidade e alongamento ESPECÍFICOS para os grupos musculares trabalhados naquele dia. Os exercícios de mobilidade devem variar de dia para dia conforme o foco muscular muda.
+- Por exemplo: dia de peito deve ter mobilidade de ombro e peitoral; dia de pernas deve ter mobilidade de quadril e tornozelo.
 - Respeite as limitações do aluno.
-- Inclua entre 5 e 8 exercícios de musculação por dia em "days".
+- Inclua entre 5 e 8 exercícios de musculação por dia em "exercises".
 - video_query e image_query em português.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -191,7 +192,7 @@ ${JSON.stringify(current.plan)}
 O aluno pediu o seguinte ajuste/adição:
 "${data.request}"
 
-Atualize a planilha respeitando o pedido. Mantenha a MESMA estrutura JSON exata (title, summary, split, stretching_routine, days[], nutrition_tips, safety_notes) com os mesmos campos. Ajuste apenas o necessário e retorne APENAS o JSON completo atualizado, sem markdown.`;
+Atualize a planilha respeitando o pedido. Mantenha a MESMA estrutura JSON exata (title, summary, split, days[], nutrition_tips, safety_notes) com os mesmos campos. Cada dia deve ter seu próprio array "warmup_mobility" com exercícios de mobilidade/alongamento ESPECÍFICOS para os músculos daquele dia. Ajuste apenas o necessário e retorne APENAS o JSON completo atualizado, sem markdown.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

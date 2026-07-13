@@ -162,6 +162,66 @@ export type Database = {
           },
         ]
       }
+      nutrition_logs: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          calories: number | null
+          protein: number | null
+          carbs: number | null
+          fat: number | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date?: string
+          calories?: number | null
+          protein?: number | null
+          carbs?: number | null
+          fat?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          calories?: number | null
+          protein?: number | null
+          carbs?: number | null
+          fat?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      nutrition_plans: {
+        Row: {
+          id: string
+          user_id: string
+          plan: Json
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan: Json
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan?: Json
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       intakes: {
         Row: {
           age: number | null
