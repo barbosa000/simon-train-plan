@@ -8,6 +8,7 @@ const nav = [
   { to: "/dashboard" as const, label: "Treino" },
   { to: "/progress" as const, label: "Evolução" },
   { to: "/chat" as const, label: "Coach IA" },
+  { to: "/nutrition" as const, label: "Nutrição" },
 ];
 
 export function AppNav() {

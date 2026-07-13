@@ -178,14 +178,16 @@ function RefinePanel() {
 
 function DayView({ day, planId }: { day: Day; planId: string }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {day.warmup && (
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Aquecimento</div>
           <div className="mt-1 text-sm">{day.warmup}</div>
         </div>
       )}
-      {day.exercises?.map((ex, i) => <ExerciseCard key={i} ex={ex} dayKey={day.day} planId={planId} />)}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {day.exercises?.map((ex, i) => <ExerciseCard key={i} ex={ex} dayKey={day.day} planId={planId} />)}
+      </div>
       {day.cooldown && (
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Volta à calma</div>
@@ -199,7 +201,6 @@ function DayView({ day, planId }: { day: Day; planId: string }) {
 function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; planId: string }) {
   const [open, setOpen] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const [showPlayer, setShowPlayer] = useState(false);
   const resolve = useServerFn(resolveExerciseVideo);
   const query = ex.video_query ?? `${ex.name} execução musculação`;
   const imgQuery = ex.image_query ?? ex.name;
@@ -216,31 +217,47 @@ function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; pl
     ? `https://www.youtube.com/watch?v=${videoId}`
     : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
   const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
-  const imagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}`;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-4 p-5 text-left">
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-medium">{ex.name}</div>
-          <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><Repeat className="h-3 w-3" /> {ex.sets}x {ex.reps}</span>
-            {ex.rest_seconds ? <span className="inline-flex items-center gap-1"><Timer className="h-3 w-3" /> {ex.rest_seconds}s</span> : null}
-            {ex.tempo && <span>Tempo {ex.tempo}</span>}
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-all hover:border-border/80">
+      <div className="flex flex-col p-4 sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-2">
+          <h3 className="font-display text-lg leading-tight text-foreground">{ex.name}</h3>
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-gold hover:text-gold-foreground transition-colors"
+            title="Ver Mídia e Detalhes"
+          >
+            <PlayCircle className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="mt-auto grid grid-cols-2 gap-2 text-center text-sm">
+          <div className="flex flex-col rounded-lg border border-border bg-background/50 p-2">
+            <span className="font-semibold text-foreground">{ex.sets}x {ex.reps}</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Séries</span>
+          </div>
+          <div className="flex flex-col rounded-lg border border-border bg-background/50 p-2">
+            <span className="font-semibold text-foreground">{ex.rest_seconds ?? "60"}s</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Descanso</span>
           </div>
         </div>
-        <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>
+        {ex.cues && (
+          <p className="mt-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
+            {ex.cues}
+          </p>
+        )}
+      </div>
+
       {open && (
-        <div className="border-t border-border p-5 pt-4 animate-fade-up">
-          {ex.cues && <p className="mb-4 text-sm text-muted-foreground">{ex.cues}</p>}
-          <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-black relative">
+        <div className="border-t border-border bg-background/30 p-4 pt-4 animate-fade-up">
+          <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-black relative shadow-inner">
             {mediaLoading && (
               <div className="flex h-full w-full items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             )}
-            {!mediaLoading && videoId && showPlayer && (
+            {!mediaLoading && videoId && (
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
                 allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
@@ -248,18 +265,6 @@ function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; pl
                 className="h-full w-full"
                 title={ex.name}
               />
-            )}
-            {!mediaLoading && videoId && !showPlayer && thumbnailUrl && (
-              <button
-                onClick={() => setShowPlayer(true)}
-                className="group relative block h-full w-full"
-                aria-label={`Reproduzir vídeo de ${ex.name}`}
-              >
-                <img src={thumbnailUrl} alt={ex.name} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/50">
-                  <PlayCircle className="h-16 w-16 text-white drop-shadow-lg" />
-                </div>
-              </button>
             )}
             {!mediaLoading && !videoId && (
               <a
@@ -269,19 +274,13 @@ function ExerciseCard({ ex, dayKey, planId }: { ex: Exercise; dayKey: string; pl
                 className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 <PlayCircle className="h-10 w-10" />
-                Vídeo indisponível — buscar no YouTube
+                Abrir no YouTube
               </a>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <a href={videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent">
-              <PlayCircle className="h-3.5 w-3.5" /> Ver no YouTube
-            </a>
-            <a href={imagesUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-accent">
-              <ImageIcon className="h-3.5 w-3.5" /> Ver imagens
-            </a>
-            <button onClick={() => setShowLog(!showLog)} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground">
-              <Plus className="h-3.5 w-3.5" /> Registrar carga
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowLog(!showLog)} className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              Registrar
             </button>
           </div>
           {showLog && <QuickLog dayKey={dayKey} planId={planId} exerciseName={ex.name} onDone={() => setShowLog(false)} />}
